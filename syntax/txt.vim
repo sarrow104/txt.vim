@@ -953,9 +953,9 @@ nnoremap <buffer> <A-F>	 gq{``
 nnoremap <buffer> <A-d>	 d}
 nnoremap <buffer> <A-D>	 d{
 
-call util#PairAdd_chinese_style()
+call pairpunct#PairAdd_chinese_style()
 
-call util#PairVisual_chinese_style()
+call pairpunct#PairVisual_chinese_style()
 
 " Sarrow:2009-07-26
 " Old:
