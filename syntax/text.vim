@@ -19,7 +19,7 @@
 " Install:							{{{1
 "    	1) Copy this file into your $Vimfiles/syntax directory.
 "    	2) Add this line below to your .vimrc(*unix) or _vimrc(windows) file: --->
-"    	   au BufNewFile,BufRead *.txt		setf txt
+"    	   au BufNewFile,BufRead *.text		setf text
 "    	<---
 "    	3) 在.vimrc或_vimrc文件中添加
 "    	   let g:ChapterNavigatorWindowPostion = 'left' or 'right'
@@ -740,7 +740,7 @@ if !exists("*s:ToggleChapgerEntryList")
 	" FIXME 2011-03-18
 	augroup TXTChapEntry_Toggle
 	    au!
-	    autocmd WinLeave *.txt    let g:TXT_navi_pre_bufnr = winbufnr(0)
+	    autocmd WinLeave *.text    let g:TXT_navi_pre_bufnr = winbufnr(0)
 	augroup END
 	" End:
 
@@ -789,7 +789,7 @@ endif
 " 	0	updata and no-switch window
 if !exists("*s:FileChapEntryListLocate")
     function s:FileChapEntryListLocate(switch)
-	if &ft == 'txt' && !exists("b:TXTChapEntry") " Have not yet create the Chap Entry List.
+	if &ft == 'text' && !exists("b:TXTChapEntry") " Have not yet create the Chap Entry List.
 	    let b:TXTChapEntry = s:GetChapterEntryList()
 	    let is_need_update = 1
 	    " return
@@ -937,13 +937,17 @@ nnoremap <buffer> t+ :call <SID>TextTitleInc()<CR>
 nnoremap <buffer> t- :call <SID>TextTitleDec()<CR>
 
 " Push-front two chinese white-space characters
-nnoremap <buffer> <A-q>  :let _hls=&hls<CR>:set nohls<CR>:let __X__=@/<CR>:silent s#^[\ \t　]*#　　#g<CR>:let @/=__X__<CR>:let &hls=_hls<CR>
-inoremap <buffer> <A-q>  <C-r>='　　'<CR>
+nnoremap <buffer> <C-q>  :let _hls=&hls<CR>:set nohls<CR>:let __X__=@/<CR>:silent s#^[\ \t　]*#　　#g<CR>:let @/=__X__<CR>:let &hls=_hls<CR>
+inoremap <buffer> <C-q>  <C-r>='　　'<CR>
 
 " Combine to the 1st none emty line, and strip chinese white-space characters
 " between them, if any.
-nnoremap <buffer> <A-J>  mz:let __X__=@/<CR>$:silent s#\%([^\n]\)\@=\n\+[\ \t　]*##g<CR>`z:let @/=__X__<CR>
-inoremap <buffer> <A-J>  <C-o>mz<C-o>$<C-o>:silent s#\%([^\n]\)\@=\n\+[\ \t　]*##g<CR><C-o>`z<C-o>:let @/=''<CR>
+" s#\n\+[\ \t　]*##g
+" nnoremap <buffer> <C-J>  mz:let __X__=@/<CR>$:silent s#\%([^\n]\)\@=\n\+[\ \t　]*##g<CR>`z:let @/=__X__<CR>
+" inoremap <buffer> <C-J>  <C-o>mz<C-o>$<C-o>:silent s#\%([^\n]\)\@=\n\+[\ \t　]*##g<CR><C-o>`z<C-o>:let @/=''<CR>
+
+nnoremap <buffer> <C-J>  mz:let __X__=@/<CR>$:silent s#\n\+[\ \t　]*##g<CR>`z:let @/=__X__<CR>
+inoremap <buffer> <C-J>  <C-o>mz<C-o>$<C-o>:silent s#\n\+[\ \t　]*##g<CR><C-o>`z<C-o>:let @/=''<CR>
 
 " Format
 nnoremap <buffer> <A-f>	 gq}``
@@ -1117,6 +1121,26 @@ endfunction
 command! -nargs=0 -range=% -buffer TDelEmptyLine	call <SID>DelEmptyLines(<line1>, <line2>)
 "End: 2011-03-19
 
+" Sarrow: 2016-06-10
+command! -nargs=0 -range=% -buffer TCopyIpadYoukuLink   call <SID>CopyIpadYoukuLink(<line1>, <line2>)
+" 将youku视频链接，转换为ipad点击，即可在youku app上播放的链接；
+
+function! s:CopyIpadYoukuLink(line1, line2) " {{{1
+    let s:youku_vid = []
+    call s:MarkAsXY(a:line1, a:line2)
+    let l:line = a:line1
+    while l:line <= a:line2
+        let vid = matchstr(getline(l:line), '\<http://v\.youku\.com/v_show/id_\zs\w\+==\ze\.html\>')
+        if len(vid) > 0
+            call add(s:youku_vid, 'http://iosport.youku.com/ipad/ulink?vid='.vid)
+        endif
+        let l:line += 1
+    endwhile
+    if len(s:youku_vid) > 0
+        call setreg('+', join(s:youku_vid, "\n"))
+    endif
+endfunction
+
 function! s:Clear_qidian_stamp(line1, line2) "{{{1
     call s:MarkAsXY(a:line1, a:line2)
     silent 'x,'yg#^第.\{-1,5}章#normal t3
@@ -1124,8 +1148,8 @@ function! s:Clear_qidian_stamp(line1, line2) "{{{1
     silent 'x,'ys#起..点..中..文..网..授权发布##ge
     silent 'x,'ys#好书尽在www.cmfu.com\n##ge
     silent 'x,'ys#\(\s\|　\)\+$##ge
-　　silent 'x,'ys#^[　 ]*(\%(起..点..中..文..网\)\?更新\(时间：\S\+\).\+$#\1#ge
-    silent 'x,'ys#^　　<a href=http://www.qidian.com>起点中文网\s*www.qidian.com\s*欢迎广大书友光临阅读，最新、最快、最火的连载作品尽在起点原创！</a>\n##ge
+　　silent 'x,'ys/^[　 ]*(\%(起..点..中..文..网\)\?更新\(时间：\S\+\).\+$/\1/ge
+    silent 'x,'ys/^　　<a href=http:\/\/www.qidian.com>起点中文网\s*www.qidian.com\s*欢迎广大书友光临阅读，最新、最快、最火的连载作品尽在起点原创！<\/a>\n//ge
 endfunction
 command! -nargs=0 -range=% -buffer ClearQidianStamp	call <SID>Clear_qidian_stamp(<line1>, <line2>)
 
@@ -1244,4 +1268,4 @@ function! s:HTML_Make_title() " {{{1
     return '<h'._n_dep_.' id="'. _id_.'">'.submatch(2).'</h'._n_dep_.'>'
 endfunction
 
-let b:current_syntax="txt"	"{{{1
+let b:current_syntax="text"	"{{{1
