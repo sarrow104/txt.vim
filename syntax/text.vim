@@ -1113,6 +1113,31 @@ endfunction
 
 command! -nargs=0 -range=% -buffer TPunctFull2Half	call <SID>FullPunct2HalfPunct(<line1>, <line2>)
 
+function! s:AlphNumFull2Half(line1, line2) "{{{1
+    "encoding=utf-16
+    "   :%s`[\ua3b0-\ua3b9\ua3c1-\ua3da\uz3e1-\ua3fa]`\=nr2char(char2nr(submatch(0))-0xa380)`g
+    "encoding=utf-8
+    "   :%s`[\uff10-\uff19\uff21-\uff3a\uff41-\uff5a]`\=nr2char(char2nr(submatch(0))-0xfee0)`g
+    if &encoding != 'utf-8'
+        call msg#ErrorMsg('must under utf-8 vim system encoding setting!')
+        return
+    endif
+    call s:MarkAsXY(a:line1, a:line2)
+    silent 'x,'ys`[\uff10-\uff19\uff21-\uff3a\uff41-\uff5a]`\=nr2char(char2nr(submatch(0))-0xfee0)`g
+endfunction
+
+function! s:AlphNumHalf2Full(line1, line2) "{{{1
+    if &encoding != 'utf-8'
+        call msg#ErrorMsg('must under utf-8 vim system encoding setting!')
+        return
+    endif
+    call s:MarkAsXY(a:line1, a:line2)
+    silent 'x,'ys`[\u0030-\u0039\u0061-\u007a\u0041-\u005a]`\=nr2char(char2nr(submatch(0))+0xfee0)`g
+endfunction
+
+command! -nargs=0 -range=% -buffer TAlphNumFull2Half    call <SID>AlphNumFull2Half(<line1>, <line2>)
+command! -nargs=0 -range=% -buffer TAlphNumHalf2Full    call <SID>AlphNumHalf2Full(<line1>, <line2>)
+
 function! s:DelEmptyLines(line1, line2) "{{{1
     call s:MarkAsXY(a:line1, a:line2)
     silent 'x,'yg#^\s*$#d
